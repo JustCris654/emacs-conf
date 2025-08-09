@@ -43,6 +43,7 @@
 #+begin_src emacs-lisp
   (pixel-scroll-precision-mode 1)
   (defalias 'yes-or-no-p 'y-or-n-p) ;; life is too short
+  (setopt use-short-answers t)
   (setq show-trailing-whitespace t)
   (setq indent-tabs-mode nil)
   (setq create-lockfiles nil)
