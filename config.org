@@ -53,6 +53,9 @@
           `((".*" ,(concat user-emacs-directory "backups") t)))
 
   (set-charset-priority 'unicode)
+  (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
+  (setq native-comp-async-report-warnings-errors nil)
+  (setq load-prefer-newer t)
 #+end_src
 
 
