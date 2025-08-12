@@ -23,6 +23,9 @@
   - [[#enable-org-bullets][Enable org bullets]]
   - [[#enable-org-tempo][Enable org-tempo]]
 - [[#theme][THEME]]
+- [[#all-the-icons][ALL THE ICONS]]
+- [[#rainbow-mode][RAINBOW MODE]]
+- [[#magit][MAGIT]]
 
 * EMACS Customizations
 ** Remove tool-bar, menu-bar and scroll-bar
@@ -313,4 +316,34 @@ Useful snippets for org-mode
   :ensure t
   :config
   (load-theme 'kanagawa-dragon t))
+#+end_src
+
+* ALL THE ICONS
+This is an icon set that can be used with dashboard, dired, ibuffer and other Emacs programs.
+  
+#+begin_src emacs-lisp
+(use-package all-the-icons
+  :ensure t
+  :if (display-graphic-p))
+
+(use-package all-the-icons-dired
+  :hook (dired-mode . (lambda () (all-the-icons-dired-mode t))))
+#+end_src
+
+* RAINBOW MODE
+Display the actual color as a background for any hex color value (ex. #ffffff).  The code block below enables rainbow-mode in all programming modes (prog-mode) as well as org-mode, which is why rainbow works in this document.  
+
+#+begin_src emacs-lisp
+(use-package rainbow-mode
+  :hook 
+  ((org-mode prog-mode) . rainbow-mode))
+#+end_src
+
+* MAGIT
+#+begin_src emacs-lisp
+  (use-package transient
+    :ensure t)
+  (use-package magit
+    :after transient
+    :ensure t)
 #+end_src
