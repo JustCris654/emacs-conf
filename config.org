@@ -22,6 +22,7 @@
   - [[#enable-org-indent-mode][Enable org-indent-mode]]
   - [[#enable-org-bullets][Enable org bullets]]
   - [[#enable-org-tempo][Enable org-tempo]]
+- [[#theme][THEME]]
 
 * EMACS Customizations
 ** Remove tool-bar, menu-bar and scroll-bar
@@ -303,3 +304,13 @@ Useful snippets for org-mode
   (require 'org-tempo)
 #+end_src
 
+* THEME
+#+begin_src emacs-lisp
+  (add-to-list 'custom-theme-load-path "~/.config/emacs/themes/")
+  ;; (load-theme 'cobrakai t)
+
+  (use-package kanagawa-themes
+  :ensure t
+  :config
+  (load-theme 'kanagawa-dragon t))
+#+end_src
