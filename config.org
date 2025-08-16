@@ -11,7 +11,7 @@
   - [[#qol][QoL]]
 - [[#packages-important-to-load-first-important-to-load-first][PACKAGES important to load first important to load first]]
   - [[#elpaca-package-manager][Elpaca package manager]]
-  - [[#instal-evil-mode][Instal evil-mode]]
+  - [[#install-evil-mode][Install evil-mode]]
   - [[#general-keybindings][General keybindings]]
 - [[#fonts][FONTS]]
   - [[#setting-the-font-face][Setting the Font Face]]
@@ -23,9 +23,16 @@
   - [[#enable-org-bullets][Enable org bullets]]
   - [[#enable-org-tempo][Enable org-tempo]]
 - [[#theme][THEME]]
+  - [[#solaire-mode][Solaire mode]]
+- [[#highlight][HIGHLIGHT]]
 - [[#all-the-icons][ALL THE ICONS]]
 - [[#rainbow-mode][RAINBOW MODE]]
 - [[#magit][MAGIT]]
+- [[#mode-line][MODE LINE]]
+- [[#project][PROJECT]]
+- [[#languages][LANGUAGES]]
+  - [[#lsp-mode][lsp-mode]]
+  - [[#rust][Rust]]
 
 * EMACS Customizations
 ** Remove tool-bar, menu-bar and scroll-bar
@@ -114,7 +121,7 @@
 (elpaca-wait)
 #+end_src
 
-** Instal evil-mode
+** Install evil-mode
 #+begin_src emacs-lisp
   (use-package evil
     :init
@@ -126,15 +133,30 @@
   (use-package evil-collection
     :after evil
     :config
-    (setq evil-collection-mode-list '(dashboard dired ibuffer))
+    (setq evil-collection-mode-list '(dashboard dired ibuffer magit))
     (evil-collection-init)
-  )
+    )
   (use-package evil-tutor)
   (use-package evil-commentary
     :after evil
     :config
     (evil-commentary-mode)
     )
+  (use-package evil-surround
+    :after evil
+    :config
+    (global-evil-surround-mode 1)) ;; globally enable evil-surround
+
+  (use-package evil-goggles
+    :ensure t
+    :config
+    (evil-goggles-mode)
+
+    ;; optionally use diff-mode's faces; as a result, deleted text
+    ;; will be highlighed with `diff-removed` face which is typically
+    ;; some red color (as defined by the color theme)
+    ;; other faces such as `diff-added` will be used for other actions
+    (evil-goggles-use-diff-faces))
 #+end_src
 
 # ** Vundo
@@ -149,66 +171,69 @@
 ** General keybindings
 #+begin_src emacs-lisp
   (use-package general
+    :demand t
     :config
     (general-evil-setup)
+    (general-auto-unbind-keys)
 
-    ;; set 'SPC' as the global leader key
+    ;; Definisci leader key
     (general-create-definer jc/leader-keys
       :states '(normal insert visual emacs)
       :keymaps 'override
-      :prefix "SPC" ;; set leader
-      :global-prefix "M-SPC" ;; access leader in insert mode with this
-      )
+      :prefix "SPC"
+      :global-prefix "M-SPC")
+
     (jc/leader-keys
-      ;; buffer related keybindings
+      ;; Buffer
       "b" '(:ignore t :wk "Buffer")
-      "b b" '(switch-to-buffer :wk "Switch to buffer")
+      "b b" '(switch-to-buffer :wk "Switch buffer")
       "b i" '(ibuffer :wk "Ibuffer")
-      "b k" '(kill-this-buffer :wk "Kill current buffer")
-      "b k" '(kill-this-buffer :wk "Kill current buffer")
+      "b k" '(kill-this-buffer :wk "Kill buffer")
       "b n" '(next-buffer :wk "Next buffer")
       "b p" '(previous-buffer :wk "Previous buffer")
-      "b r" '(rever-buffer :wk "Rever buffer"))
+      "b r" '(revert-buffer :wk "Revert buffer")
 
-    (jc/leader-keys
-      ;; dired
+      ;; Dired
       "." '(find-file :wk "Find file")
-      "p v" '(dired :wk "Dired"))
+      "p v" '(dired-jump :wk "Dired jump")
 
-    (jc/leader-keys
+      ;; Project
+      "p" '(:ignore t :wk "Project")
+      "p p" '(project-prefix-map :wk "Project map")
+      
+      "g" '(:ignore t :wk "Git")
+      "g g" '(magit-status :wk "Status")
+
       ;; Windows
       "w" '(:ignore t :wk "Window")
-      "w v" '(split-window-horizontally :wk "Split window horizontally")
-      "w h" '(split-window-vertically :wk "Split window vertically")
-      "w w" '(other-window :wk "Go to next window")
-      "w c" '(delete-window :wk "Close current window"))
+      "w v" '(split-window-horizontally :wk "Split horizontally")
+      "w h" '(split-window-vertically :wk "Split vertically")
+      "w w" '(other-window :wk "Next window")
+      "w c" '(delete-window :wk "Close window")
 
-    (jc/leader-keys
       ;; Help
       "h" '(:ignore t :wk "Help")
       "h f" '(describe-function :wk "Describe function")
-      "h v" '(describe-variable :wk "Descrive variable")
-      )
+      "h v" '(describe-variable :wk "Describe variable")
 
-    (jc/leader-keys
+      ;; Evaluate
       "e" '(:ignore t :wk "Evaluate")
-      "e b" '(eval-buffer :wk "Evaluate elisp in buffer")
-      "e d" '(eval-defun :wk "Evaluate defun containing or after point")
-      "e e" '(eval-expression :wk "Evaluate and elisp expression")
-      "e l" '(eval-last-sexp :wk "Evaluate elisp expression before point")
-      "e r" '(eval-region :wk "Evaluate elisp in region"))
-    
-    (jc/leader-keys
+      "e b" '(eval-buffer :wk "Eval buffer")
+      "e d" '(eval-defun :wk "Eval defun")
+      "e e" '(eval-expression :wk "Eval expression")
+      "e l" '(eval-last-sexp :wk "Eval last sexp")
+      "e r" '(eval-region :wk "Eval region")
+
+      ;; File
       "f" '(:ignore t :wk "File")
-      "f s" '(save-buffer :wk "Write file")
-      "f S" '(sudo-edit :wk "Sudo edit file"))
-    )
+      "f s" '(save-buffer :wk "Save file")
+      "f S" '(sudo-edit :wk "Sudo edit file")))
 #+end_src
 
 ## Misc
 #+begin_src emacs-lisp
   (ido-mode t)
-  (electric-pair-mode t)
+  (electric-pair-mode -1)
   (electric-indent-mode -1)
 #+end_src
 
@@ -317,17 +342,37 @@ Useful snippets for org-mode
   :config
   (load-theme 'kanagawa-dragon t))
 #+end_src
+** Solaire mode
+#+begin_src emacs-lisp
+(use-package solaire-mode
+  :demand t
+  :config
+  (solaire-global-mode +1))
+#+end_src
+* TODO HIGHLIGHT
+#+begin_src emacs-lisp
+(use-package hl-todo
+  :demand t
+  :init
+  (global-hl-todo-mode))
+#+end_src
 
 * ALL THE ICONS
 This is an icon set that can be used with dashboard, dired, ibuffer and other Emacs programs.
   
 #+begin_src emacs-lisp
-(use-package all-the-icons
-  :ensure t
-  :if (display-graphic-p))
+  (use-package all-the-icons
+    :ensure t
+    :if (display-graphic-p))
 
-(use-package all-the-icons-dired
-  :hook (dired-mode . (lambda () (all-the-icons-dired-mode t))))
+  (use-package all-the-icons-dired
+    :hook (dired-mode . (lambda () (all-the-icons-dired-mode t))))
+
+  (use-package all-the-icons-completion
+  :after (marginalia all-the-icons)
+  :demand t
+  :hook (marginalia-mode . all-the-icons-completion-marginalia-setup)
+  :init (all-the-icons-completion-mode))
 #+end_src
 
 * RAINBOW MODE
@@ -346,4 +391,41 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
   (use-package magit
     :after transient
     :ensure t)
+#+end_src
+
+* MODE LINE
+#+begin_src emacs-lisp
+  (use-package minions
+    :demand t
+    :config
+    (minions-mode 1))
+#+end_src
+
+* PROJECT
+#+begin_src emacs-lisp
+  (use-package project
+    :ensure t)
+#+end_src
+
+* LANGUAGES
+** lsp-mode
+#+begin_src emacs-lisp
+    (use-package lsp-mode
+      :commands (lsp lsp-deferred)
+      :init
+      (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+      :config
+      (lsp-enable-which-key-integration t))
+    
+  ;; (defun jc/lsp-mode-setup ()
+  ;;   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+  ;;   (lsp-headerline-breadcrumb-mode))
+
+  ;;   :hook (lsp-mode . jc/lsp-mode-setup)
+#+end_src
+** Rust
+#+begin_src emacs-lisp
+(use-package rustic
+  :mode ("\\.rs\\'" . rustic-mode)
+  :config (setq rustic-lsp-client 'eglot))
 #+end_src
