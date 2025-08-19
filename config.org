@@ -404,13 +404,6 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
 
 * PROJECTILE
 #+begin_src emacs-lisp
-  (use-package projectile
-    :ensure t
-    :init
-    (projectile-mode +1)
-    :bind (:map projectile-mode-map
-                ("s-p" . projectile-command-map)
-                ("C-c p" . projectile-command-map)))
 #+end_src
 
 * LANGUAGES
