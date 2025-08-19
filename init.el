@@ -10,7 +10,9 @@
  ;; If there is more than one, they won't work right.
  '(custom-enabled-themes '(tsdh-dark))
  '(custom-safe-themes
-   '("d2ab3d4f005a9ad4fb789a8f65606c72f30ce9d281a9e42da55f7f4b9ef5bfc6"
+   '("c6e1d3e82921c79562511eb4d0af6efb39666e41e309598067c0481c5925cc7f"
+     "daa27dcbe26a280a9425ee90dc7458d85bd540482b93e9fa94d4f43327128077"
+     "d2ab3d4f005a9ad4fb789a8f65606c72f30ce9d281a9e42da55f7f4b9ef5bfc6"
      default)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
