@@ -35,6 +35,7 @@
   - [[#lsp-mode][lsp-mode]]
   - [[#typescript][Typescript]]
   - [[#rust][Rust]]
+  - [[#dockerfile][Dockerfile]]
 - [[#completion][COMPLETION]]
   - [[#vertico][Vertico]]
 
@@ -460,6 +461,8 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
     :config
     ;; Enable auto completion and configure quitting
     (setq corfu-auto t
+  	corfu-auto-delay 0
+  	corfu-auto-prefix 2
   	corfu-quit-no-match 'separator) ;; or t
     )
   ;; Optionally use the `orderless' completion style.
@@ -510,6 +513,13 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
     (setq rust-mode-treesitter-derive t)
     :config
     (add-hook 'rust-mode-hook #'lsp))
+#+end_src
+
+** Dockerfile
+#+begin_src emacs-lisp
+  (use-package dockerfile-mode
+    :mode "\\Dockerfile\\"
+  )
 #+end_src
 
 * COMPLETION
