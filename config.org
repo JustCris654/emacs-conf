@@ -1,4 +1,3 @@
-#+TITLE: JustCris Emacs Configuration
 #+AUTHOR: Cristian Scapin (JustCris)
 #+DESCRIPTION: Personal Emacs config.
 #+STARTUP: showeverything
@@ -13,6 +12,7 @@
   - [[#elpaca-package-manager][Elpaca package manager]]
   - [[#install-evil-mode][Install evil-mode]]
   - [[#general-keybindings][General keybindings]]
+- [[#editorconfig][EDITORCONFIG]]
 - [[#fonts][FONTS]]
   - [[#setting-the-font-face][Setting the Font Face]]
   - [[#zomming-inout][Zomming in/out]]
@@ -22,6 +22,7 @@
   - [[#enable-org-indent-mode][Enable org-indent-mode]]
   - [[#enable-org-bullets][Enable org bullets]]
   - [[#enable-org-tempo][Enable org-tempo]]
+  - [[#org-roam][Org roam]]
 - [[#theme][THEME]]
   - [[#solaire-mode][Solaire mode]]
 - [[#highlight][HIGHLIGHT]]
@@ -29,12 +30,14 @@
 - [[#rainbow-mode][RAINBOW MODE]]
 - [[#magit][MAGIT]]
 - [[#mode-line][MODE LINE]]
-- [[#projectile][PROJECTILE]]
 - [[#languages][LANGUAGES]]
   - [[#treesitter][Treesitter]]
   - [[#lsp-mode][lsp-mode]]
   - [[#typescript][Typescript]]
+  - [[#javascript][Javascript]]
   - [[#rust][Rust]]
+  - [[#golang][Golang]]
+  - [[#bash][Bash]]
   - [[#dockerfile][Dockerfile]]
 - [[#completion][COMPLETION]]
   - [[#vertico][Vertico]]
@@ -44,7 +47,7 @@
 #+begin_src emacs-lisp
   (tool-bar-mode -1)
   (menu-bar-mode -1)
-  (toggle-scroll-bar -1)
+  (scroll-bar-mode -1)
   (pixel-scroll-precision-mode 1)
   (setq inhibit-startup-message t) 
   (setq initial-scratch-message nil)
@@ -159,6 +162,26 @@
     :ensure t
     :config
     (evil-goggles-mode))
+
+  (use-package evil-mc
+    :ensure t
+    :config
+    (global-evil-mc-mode  1))
+#+end_src
+
+Change zz behavior by making it align to 1/3 of the screen (based on actual font and font size)
+#+begin_src emacs-lisp
+  (defun jc/scroll-line-to-one-third ()
+    (interactive)
+    (forward-line 20)
+    (recenter)
+    (forward-line -20))
+  (use-package emacs
+    :ensure nil
+    :after evil
+    :config
+    (define-key evil-normal-state-map (kbd "z z") 'jc/scroll-line-to-one-third)
+    )
 #+end_src
 
 # ** Vundo
@@ -195,13 +218,11 @@
       "b p" '(previous-buffer :wk "Previous buffer")
       "b r" '(revert-buffer :wk "Revert buffer")
 
-      ;; Dired
-      "." '(find-file :wk "Find file")
-      "p v" '(dired-jump :wk "Dired jump")
-
       ;; Project
       "p" '(:ignore t :wk "Project")
-      "p p" '(project-prefix-map :wk "Project map")
+      "p p" '(project-switch-project :wk "Switch project")
+      "p v" '(dired-jump :wk "Dired jump")
+      "SPC" '(project-find-file :wk "Project find file")
       
       "g" '(:ignore t :wk "Git")
       "g g" '(magit-status :wk "Status")
@@ -240,6 +261,13 @@
 #+end_src
 
 
+* EDITORCONFIG
+#+begin_src emacs-lisp
+(use-package editorconfig
+  :ensure t
+  :config
+  (editorconfig-mode 1))
+#+end_src
 * FONTS
 Defining the various fonts that Emacs will use.
 ** Setting the Font Face
@@ -301,6 +329,7 @@ Defining the various fonts that Emacs will use.
 ** Enable table of contents
 #+begin_src emacs-lisp
   (use-package toc-org
+:ensure t
     :commands toc-org-enable
     :init (add-hook 'org-mode-hook 'toc-org-enable))
 #+end_src
@@ -312,7 +341,8 @@ Defining the various fonts that Emacs will use.
 
 ** Enable org bullets
 #+begin_src emacs-lisp
-  (use-package org-bullets)
+  (use-package org-bullets
+:ensure t)
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 #+end_src
 
@@ -333,6 +363,23 @@ Useful snippets for org-mode
 #+begin_src emacs-lisp
   (require 'org-tempo)
 #+end_src
+** Org roam
+#+begin_src emacs-lisp
+  (use-package org-roam
+  :ensure t
+  :init
+  (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory "~/org-roam")
+  (org-roam-completion-everywhere t)
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n i" . org-roam-node-insert)
+         :map org-mode-map
+         ("C-M-i"    . completion-at-point))
+  :config
+  (org-roam-setup))
+#+end_src
 
 * THEME
 #+begin_src emacs-lisp
@@ -342,7 +389,7 @@ Useful snippets for org-mode
   (use-package kanagawa-themes
     :ensure t
     :config
-    (load-theme 'kanagawa-dragon t))
+    (load-theme 'kanagawa-wave t))
 #+end_src
 ** Solaire mode
 #+begin_src emacs-lisp
@@ -403,10 +450,6 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
     (minions-mode 1))
 #+end_src
 
-* PROJECTILE
-#+begin_src emacs-lisp
-#+end_src
-
 * LANGUAGES
 ** Treesitter
 #+begin_src emacs-lisp
@@ -432,6 +475,8 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
                (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "tsx/src"))
                (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "typescript/src"))
                (yaml . ("https://github.com/ikatyang/tree-sitter-yaml" "v0.5.0"))
+               (go . ("https://github.com/tree-sitter/tree-sitter-go"))
+               (gomod ("https://github.com/camdencheek/tree-sitter-go-mod"))
                (prisma "https://github.com/victorhqc/tree-sitter-prisma")))
       (add-to-list 'treesit-language-source-alist grammar)
       ;; Only install `grammar' if we don't already have it
@@ -506,6 +551,18 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
   ;;   :mode "\\.tsx\\'"
   ;;   :hook (tsx-ts-mode . lsp-deferred))
 #+end_src
+** Javascript
+#+begin_src emacs-lisp
+  ;; (use-package emacs
+  ;; :ensure nil
+  ;; :after lsp-mode
+  ;; :config
+  ;; (lsp-install-server eslint)) 
+  (use-package js-ts-mode
+    :ensure nil
+    :mode "\\.js\\'"
+    :hook (js-ts-mode . lsp-deferred))
+#+end_src
 ** Rust
 #+begin_src emacs-lisp
   (use-package rust-mode
@@ -514,11 +571,30 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
     :config
     (add-hook 'rust-mode-hook #'lsp))
 #+end_src
+** Golang
+#+begin_src emacs-lisp
+  (use-package go-ts-mode
+    :ensure nil
+    :hook
+    (go-ts-mode . lsp-deferred)
+    :init
+    (add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
+    (add-to-list 'auto-mode-alist '("/go\\.mod\\'" . go-mod-ts-mode))
+    )
+#+end_src
+** Bash
+#+begin_src emacs-lisp
+  (use-package bash-ts-mode
+    :ensure nil
+    :mode "\\.bash\\'"
+    :hook (bash-ts-mode . lsp-deferred)
+    )
+#+end_src
 
 ** Dockerfile
 #+begin_src emacs-lisp
   (use-package dockerfile-mode
-    :mode "\\Dockerfile\\"
+    :mode "\\Dockerfile\\'"
   )
 #+end_src
 
