@@ -15,7 +15,8 @@
      "d2ab3d4f005a9ad4fb789a8f65606c72f30ce9d281a9e42da55f7f4b9ef5bfc6"
      default))
  '(evil-undo-system 'undo-redo)
- '(org-export-backends '(ascii html icalendar latex md odt)))
+ '(org-export-backends '(ascii html icalendar latex md odt))
+ '(package-selected-packages '(devdocs focus graphql graphql-mode pdf-tools)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

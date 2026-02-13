@@ -1,4 +1,4 @@
-#+AUTHOR: Cristian Scapin (JustCris)
+#+AUTHOR: capin (JustCris)
 #+DESCRIPTION: Personal Emacs config.
 #+STARTUP: showeverything
 #+OPTIONS: toc:2
@@ -8,12 +8,14 @@
   - [[#remove-tool-bar-menu-bar-and-scroll-bar][Remove tool-bar, menu-bar and scroll-bar]]
   - [[#enable-line-numbers-and-set-them-relative][Enable line numbers and set them relative]]
   - [[#qol][QoL]]
+  - [[#always-open-compilation-buffer-at-the-bottom-of-the-window][Always open compilation buffer at the bottom of the window]]
   - [[#fix-freezing][Fix freezing]]
 - [[#packages-important-to-load-first-important-to-load-first][PACKAGES important to load first important to load first]]
   - [[#elpaca-package-manager][Elpaca package manager]]
   - [[#install-evil-mode][Install evil-mode]]
   - [[#general-keybindings][General keybindings]]
 - [[#editorconfig][EDITORCONFIG]]
+- [[#project][PROJECT]]
 - [[#fonts][FONTS]]
   - [[#setting-the-font-face][Setting the Font Face]]
   - [[#zomming-inout][Zomming in/out]]
@@ -29,23 +31,31 @@
 - [[#highlight][HIGHLIGHT]]
 - [[#all-the-icons][ALL THE ICONS]]
 - [[#rainbow-mode][RAINBOW MODE]]
+- [[#pdf-tools][PDF-TOOLS]]
 - [[#magit][MAGIT]]
+- [[#protobuf][PROTOBUF]]
 - [[#mode-line][MODE LINE]]
+- [[#zen-mode][ZEN MODE]]
 - [[#languages][LANGUAGES]]
   - [[#treesitter][Treesitter]]
   - [[#lsp-mode][lsp-mode]]
   - [[#typescript][Typescript]]
   - [[#javascript][Javascript]]
   - [[#rust][Rust]]
+  - [[#c][C++]]
   - [[#golang][Golang]]
   - [[#bash][Bash]]
+  - [[#yaml][YAML]]
   - [[#dockerfile][Dockerfile]]
+  - [[#dockerfile-1][Dockerfile]]
 - [[#completion][COMPLETION]]
   - [[#vertico][Vertico]]
+- [[#garbage-collector][GARBAGE COLLECTOR]]
 
 * EMACS Customizations
 ** Remove tool-bar, menu-bar and scroll-bar
 #+begin_src emacs-lisp
+  (setq gc-cons-threshold most-positive-fixnum)
   (tool-bar-mode -1)
   (menu-bar-mode -1)
   (scroll-bar-mode -1)
@@ -81,6 +91,20 @@
   (setq load-prefer-newer t)
   (setq treesit-extra-load-path '("~/.config/emacs/tree-sitter/"))
   (setq garbage-collection-messages t)
+  (add-hook 'prog-mode-hook #'electric-pair-mode)
+  (use-package compile
+    :ensure nil
+    :hook (compilation-filter . ansi-color-compilation-filter)
+    :config
+    (setq compilation-environment '("TERM=xterm-256color")))
+#+end_src
+** Always open compilation buffer at the bottom of the window
+#+begin_src emacs-lisp
+(setq display-buffer-alist
+      '(("\\*compilation\\*"
+         (display-buffer-reuse-window
+          display-buffer-at-bottom)
+         (window-height . 0.3))))
 #+end_src
 ** Fix freezing
 #+begin_src emacs-lisp
@@ -93,6 +117,11 @@
   (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
   (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
 #+end_src
+# ** vTerm
+# #+begin_src emacs-lisp
+# (use-package vterm
+#     :ensure t)
+# #+end_src
 
 
 * PACKAGES important to load first important to load first
@@ -157,7 +186,7 @@
   (use-package evil-collection
     :after evil
     :config
-    (setq evil-collection-mode-list '(dashboard dired ibuffer magit))
+    (setq evil-collection-mode-list '(dashboard dired ibuffer magit compile))
     (evil-collection-init)
     )
   (use-package evil-tutor)
@@ -182,19 +211,22 @@
     (global-evil-mc-mode  1))
 #+end_src
 
-Change zz behavior by making it align to 1/3 of the screen (based on actual font and font size)
+Change zz behavior by making it align 1/3 of the screen
 #+begin_src emacs-lisp
-  (defun jc/scroll-line-to-one-third ()
-    (interactive)
-    (forward-line 20)
-    (recenter)
-    (forward-line -20))
-  (use-package emacs
-    :ensure nil
-    :after evil
-    :config
-    (define-key evil-normal-state-map (kbd "z z") 'evil-scroll-line-to-center)
-    )
+  ;; (defun jc/scroll-line-to-one-third ()
+  ;;   (interactive)
+  ;;   (let ((offset (/ (window-body-height) 6)))
+  ;;     (message "Offset: %d" offset)
+  ;;     (save-excursion
+  ;;       (forward-line offset)
+  ;;       (recenter)
+  ;;       (forward-line (- offset)))))
+
+  ;; (use-package emacs
+  ;;   :ensure nil
+  ;;   :after evil
+  ;;   :config
+  ;;   (define-key evil-normal-state-map (kbd "z z") 'jc/scroll-line-to-one-third))
 #+end_src
 
 # ** Vundo
@@ -281,6 +313,9 @@ Change zz behavior by making it align to 1/3 of the screen (based on actual font
   :config
   (editorconfig-mode 1))
 #+end_src
+* PROJECT
+#+begin_src emacs-lisp
+#+end_src
 * FONTS
 Defining the various fonts that Emacs will use.
 ** Setting the Font Face
@@ -350,6 +385,7 @@ Defining the various fonts that Emacs will use.
 ** Enable org-indent-mode
 #+begin_src emacs-lisp
   (add-hook 'org-mode-hook 'org-indent-mode)
+  (add-hook 'org-mode-hook (lambda () (setq tab-width 8)))
 #+end_src
 
 ** Enable org bullets
@@ -446,6 +482,18 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
   ;;   ((org-mode prog-mode) . rainbow-mode))
 #+end_src
 
+* PDF-TOOLS
+Render pdf files inside emacs
+
+#+begin_src emacs-lisp
+(use-package pdf-tools
+  :ensure t
+  :mode ("\\.pdf\\'" . pdf-view-mode)
+  :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1))) ;; This is the fix
+  :config
+  (pdf-tools-install))
+#+end_src
+
 * MAGIT
 #+begin_src emacs-lisp
   (use-package transient
@@ -455,12 +503,27 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
     :ensure t)
 #+end_src
 
+* PROTOBUF
+#+begin_src emacs-lisp
+  (use-package c-ts-mode
+    :ensure nil
+    :init
+    (add-to-list 'auto-mode-alist '("\\.proto\\'" . c-ts-mode))
+    )
+#+end_src
+
 * MODE LINE
 #+begin_src emacs-lisp
   (use-package minions
     :demand t
     :config
     (minions-mode 1))
+#+end_src
+
+* ZEN MODE
+#+begin_src emacs-lisp
+    (use-package zen-mode
+      :demand t)
 #+end_src
 
 * LANGUAGES
@@ -501,11 +564,28 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
 #+end_src
 ** lsp-mode
 #+begin_src emacs-lisp
+  ;; yasnippet
+  (use-package yasnippet
+    :ensure t
+    :config
+    (yas-global-mode 1))
+
   (use-package lsp-mode
+    :ensure t
     :commands (lsp lsp-deferred)
     :init
     (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+    (setq lsp-completion-provider :none)
+    (setq lsp-idle-delay 0.500)
     :config
+    (setq read-process-output-max (* 3 1024 1024))
+    (setq lsp-use-plists nil)
+    (setq lsp-enable-file-watchers t)   ;; metti a nil se il progetto ha migliaia di file
+    (setq lsp-file-watch-threshold 5000)
+
+    (setq lsp-rust-analyzer-cargo-watch-command "clippy"
+      	lsp-rust-analyzer-cargo-load-out-dirs-from-check t
+      	lsp-rust-analyzer-use-lld t)
     (lsp-enable-which-key-integration t))
 
   ;; (defun jc/lsp-mode-setup ()
@@ -514,14 +594,17 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
 
   ;;   :hook (lsp-mode . jc/lsp-mode-setup)
   (use-package corfu
+    :ensure t
     :init
     (global-corfu-mode)
     :config
     ;; Enable auto completion and configure quitting
     (setq corfu-auto t
-  	corfu-auto-delay 0
-  	corfu-auto-prefix 2
-  	corfu-quit-no-match 'separator) ;; or t
+      	corfu-auto-delay 0
+      	corfu-auto-prefix 2
+      	corfu-quit-no-match 'separator
+          corfu-cycle t
+          cortfu-preselect 'prompt) ;; or t
     )
   ;; Optionally use the `orderless' completion style.
   (use-package orderless
@@ -579,21 +662,55 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
 ** Rust
 #+begin_src emacs-lisp
   (use-package rust-mode
-    :init
-    (setq rust-mode-treesitter-derive t)
+    :ensure t
     :config
-    (add-hook 'rust-mode-hook #'lsp))
+    (setq rust-mode-treesitter-derive t)
+    :hook (rust-mode . lsp-deferred))
+
+  ;; (use-package rust-ts-mode
+  ;;   :ensure nil
+  ;;   :mode "\\.rs\\'"
+  ;;   :hook (rust-ts-mode . lsp-deferred))
+
+#+end_src
+** C++ 
+#+begin_src emacs-lisp
+  (use-package c++-ts-mode
+    :ensure nil
+    :hook
+    (c++-ts-mode . lsp-deferred)
+    :init
+    (add-to-list 'auto-mode-alist '("\\.cpp\\'" . c++-ts-mode))
+    (add-to-list 'auto-mode-alist '("\\.hpp\\'" . c++-ts-mode))
+    )
+
+  (use-package clang-format
+    :ensure t
+    :init
+    (setq clang-format-style "file"))
 #+end_src
 ** Golang
 #+begin_src emacs-lisp
-  (use-package go-ts-mode
-    :ensure nil
-    :hook
-    (go-ts-mode . lsp-deferred)
-    :init
-    (add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
-    (add-to-list 'auto-mode-alist '("/go\\.mod\\'" . go-mod-ts-mode))
-    )
+(use-package go-ts-mode
+  :ensure nil
+  :init
+  (add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
+  (add-to-list 'auto-mode-alist '("/go\\.mod\\'" . go-mod-ts-mode))
+  :hook
+  (go-ts-mode . lsp-deferred)
+  (go-ts-mode . (lambda ()
+                  ;; 1. Standard Go: Usa TAB reali (non spazi)
+                  (setq-local indent-tabs-mode t)
+                  
+                  ;; 2. Visualizzazione: Mostra un tab largo quanto 4 spazi
+                  ;; (Lo standard puro è 8, ma 4 è più comodo su schermi moderni.
+                  ;;  Il file verrà comunque salvato con \t, quindi non rompe gofmt)
+                  (setq-local tab-width 4)
+                  
+                  ;; 3. Formattazione al salvataggio (Format + Organize Imports)
+                  ;; Usiamo le funzioni di LSP che chiamano internamente gopls/gofmt
+                  (add-hook 'before-save-hook #'lsp-format-buffer t t)
+                  (add-hook 'before-save-hook #'lsp-organize-imports t t))))
 #+end_src
 ** Bash
 #+begin_src emacs-lisp
@@ -601,6 +718,13 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
     :ensure nil
     :mode "\\.bash\\'"
     :hook (bash-ts-mode . lsp-deferred)
+    )
+#+end_src
+** YAML
+#+begin_src emacs-lisp
+  (use-package yaml-ts-mode
+    :ensure nil
+    :mode "\\.yaml\\'"
     )
 #+end_src
 
@@ -611,31 +735,51 @@ Display the actual color as a background for any hex color value (ex. #ffffff). 
   )
 #+end_src
 
+** Dockerfile
+#+begin_src emacs-lisp
+  (use-package graphql-mode
+    :ensure t
+    :mode "\\.graphql\\'"
+  )
+#+end_src
+
 * COMPLETION
 ** Vertico
 #+begin_src emacs-lisp
-  (use-package vertico
-    :ensure t
-    :bind (:map vertico-map
-                ("C-j" . vertico-next)
-                ("C-k" . vertico-previous)
-                ("C-f" . vertico-exit)
-                :map minibuffer-local-map
-                ("M-h" . backward-kill-word))
-    :custom
-    (vertico-cycle t)
-    :init
-    (vertico-mode))
+(use-package vertico
+  :ensure t
+  :bind (:map vertico-map
+              ("C-j" . vertico-next)
+              ("C-k" . vertico-previous)
+              ("C-f" . vertico-exit)
+              :map minibuffer-local-map
+              ("M-h" . backward-kill-word))
+  :custom
+  ;; CORREZIONE: Dentro :custom non si usa (setq variabile valore),
+  ;; ma (variabile valore).
+  (vertico-cycle t)
+  (vertico-count 20)
+  
+  ;; LA SOLUZIONE AL FREEZE:
+  ;; Imposta a nil invece di 'grow-only.
+  ;; Questo impedisce a Emacs di calcolare i pixel ogni volta.
+  (vertico-resize nil) 
 
-  ;; (use-package savehist
-  ;;   :init
-  ;;   (savehist-mode))
+  :init
+  (vertico-mode))
 
-  (use-package marginalia
-    :after vertico
-    :ensure t
-    :custom
-    (marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light nil))
-    :init
-    (marginalia-mode))
+;; Marginalia rimane invariato
+(use-package marginalia
+  :after vertico
+  :ensure t
+  :custom
+  (marginalia-annotators '(marginalia-annotators-light nil))
+  :init
+  (marginalia-mode))
 #+end_src
+* GARBAGE COLLECTOR
+#+begin_src emacs-lisp
+  (add-hook 'focus-out-hook (lambda () (garbage-collect)))
+  (setq gc-cons-threshold (* 256 1024 1024))
+#+end_src
+
