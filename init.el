@@ -16,7 +16,7 @@
      default))
  '(evil-undo-system 'undo-redo)
  '(org-export-backends '(ascii html icalendar latex md odt))
- '(package-selected-packages '(devdocs focus graphql graphql-mode pdf-tools)))
+ '(package-selected-packages '(devdocs focus go-mode graphql graphql-mode pdf-tools)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
