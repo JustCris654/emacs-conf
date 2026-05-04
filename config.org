@@ -4,57 +4,54 @@
 #+OPTIONS: toc:2
 
 * TABLE OF CONTENTS :toc:
-- [[#emacs-customizations][EMACS Customizations]]
-  - [[#remove-tool-bar-menu-bar-and-scroll-bar][Remove tool-bar, menu-bar and scroll-bar]]
-  - [[#enable-line-numbers-and-set-them-relative][Enable line numbers and set them relative]]
+- [[#emacs-core][EMACS CORE]]
+  - [[#ui-chrome][UI Chrome]]
+  - [[#line-numbers][Line Numbers]]
   - [[#qol][QoL]]
-  - [[#always-open-compilation-buffer-at-the-bottom-of-the-window][Always open compilation buffer at the bottom of the window]]
-  - [[#fix-freezing][Fix freezing]]
-- [[#packages-important-to-load-first-important-to-load-first][PACKAGES important to load first important to load first]]
-  - [[#elpaca-package-manager][Elpaca package manager]]
-  - [[#compile][Compile]]
-  - [[#install-evil-mode][Install evil-mode]]
-  - [[#general-keybindings][General keybindings]]
-- [[#editorconfig][EDITORCONFIG]]
-- [[#project][PROJECT]]
-- [[#fonts][FONTS]]
-  - [[#setting-the-font-face][Setting the Font Face]]
-  - [[#zomming-inout][Zomming in/out]]
-- [[#which-key][WHICH-KEY]]
+  - [[#compilation-buffer][Compilation Buffer]]
+  - [[#gc-during-minibuffer][GC During Minibuffer]]
+- [[#package-manager][PACKAGE MANAGER]]
+- [[#evil][EVIL]]
+- [[#keybindings][KEYBINDINGS]]
+- [[#ui][UI]]
+  - [[#fonts][Fonts]]
+  - [[#zoom][Zoom]]
+  - [[#theme][Theme]]
+  - [[#mode-line][Mode Line]]
+  - [[#which-key][Which Key]]
+  - [[#icons][Icons]]
+  - [[#highlight][Highlight]]
+  - [[#zen-mode][Zen Mode]]
 - [[#org-mode][ORG MODE]]
-  - [[#enable-table-of-contents][Enable table of contents]]
-  - [[#enable-org-indent-mode][Enable org-indent-mode]]
-  - [[#enable-org-bullets][Enable org bullets]]
-  - [[#enable-org-tempo][Enable org-tempo]]
-  - [[#org-roam][Org roam]]
-- [[#theme][THEME]]
-  - [[#solaire-mode][Solaire mode]]
-- [[#highlight][HIGHLIGHT]]
-- [[#all-the-icons][ALL THE ICONS]]
-- [[#rainbow-mode][RAINBOW MODE]]
-- [[#pdf-tools][PDF-TOOLS]]
-- [[#magit][MAGIT]]
-- [[#protobuf][PROTOBUF]]
-- [[#mode-line][MODE LINE]]
-- [[#zen-mode][ZEN MODE]]
+  - [[#enable-table-of-contents][Enable Table of Contents]]
+  - [[#org-indent-and-bullets][Org Indent and Bullets]]
+  - [[#org-tempo][Org Tempo]]
+  - [[#org-roam][Org Roam]]
+- [[#tools][TOOLS]]
+  - [[#editorconfig][Editorconfig]]
+  - [[#magit][Magit]]
+  - [[#pdf-tools][PDF Tools]]
+- [[#completion][COMPLETION]]
+  - [[#vertico--marginalia][Vertico & Marginalia]]
+  - [[#corfu--orderless][Corfu & Orderless]]
+  - [[#yasnippet][Yasnippet]]
 - [[#languages][LANGUAGES]]
   - [[#treesitter][Treesitter]]
-  - [[#lsp-mode][lsp-mode]]
+  - [[#lsp-mode][LSP Mode]]
   - [[#typescript][Typescript]]
   - [[#javascript][Javascript]]
+  - [[#golang][Golang]]
   - [[#rust][Rust]]
   - [[#c][C++]]
-  - [[#golang][Golang]]
   - [[#bash][Bash]]
   - [[#yaml][YAML]]
   - [[#dockerfile][Dockerfile]]
-  - [[#dockerfile-1][Dockerfile]]
-- [[#completion][COMPLETION]]
-  - [[#vertico][Vertico]]
+  - [[#graphql][GraphQL]]
+  - [[#protobuf][Protobuf]]
 - [[#garbage-collector][GARBAGE COLLECTOR]]
 
-* EMACS Customizations
-** Remove tool-bar, menu-bar and scroll-bar
+* EMACS CORE
+** UI Chrome
 #+begin_src emacs-lisp
   (setq gc-cons-threshold most-positive-fixnum)
   (tool-bar-mode -1)
@@ -63,48 +60,44 @@
   (tab-bar-mode -1)
   (add-to-list 'default-frame-alist '(undecorated . t))
   (pixel-scroll-precision-mode 1)
-  (setq inhibit-startup-message t) 
+  (setq inhibit-startup-message t)
   (setq initial-scratch-message nil)
 #+end_src
 
-** Enable line numbers and set them relative
+** Line Numbers
 #+begin_src emacs-lisp
-  (display-line-numbers-mode 1)
   (global-display-line-numbers-mode 1)
   (setq display-line-numbers-type 'relative)
 #+end_src
 
 ** QoL
 #+begin_src emacs-lisp
-  (pixel-scroll-precision-mode 1)
-  (defalias 'yes-or-no-p 'y-or-n-p) ;; life is too short
   (setopt use-short-answers t)
   (setq show-trailing-whitespace t)
   (setq indent-tabs-mode nil)
   (setq create-lockfiles nil)
-  ;; keep backup and save files in a dedicated directory
   (setq backup-directory-alist
         `((".*" . ,(concat user-emacs-directory "backups")))
         auto-save-file-name-transforms
         `((".*" ,(concat user-emacs-directory "backups") t)))
-
   (set-charset-priority 'unicode)
   (setq byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
   (setq native-comp-async-report-warnings-errors nil)
   (setq load-prefer-newer t)
   (setq treesit-extra-load-path '("~/.config/emacs/tree-sitter/"))
-  (setq garbage-collection-messages t)
   (add-hook 'prog-mode-hook #'electric-pair-mode)
 #+end_src
-** Always open compilation buffer at the bottom of the window
+
+** Compilation Buffer
 #+begin_src emacs-lisp
-(setq display-buffer-alist
-      '(("\\*compilation\\*"
-         (display-buffer-reuse-window
-          display-buffer-at-bottom)
-         (window-height . 0.3))))
+  (setq display-buffer-alist
+        '(("\\*compilation\\*"
+           (display-buffer-reuse-window
+            display-buffer-at-bottom)
+           (window-height . 0.3))))
 #+end_src
-** Fix freezing
+
+** GC During Minibuffer
 #+begin_src emacs-lisp
   (defun my-minibuffer-setup-hook ()
     (setq gc-cons-threshold most-positive-fixnum))
@@ -115,73 +108,56 @@
   (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
   (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
 #+end_src
-# ** vTerm
-# #+begin_src emacs-lisp
-# (use-package vterm
-#     :ensure t)
-# #+end_src
 
-
-* PACKAGES important to load first important to load first
-** Elpaca package manager
+* PACKAGE MANAGER
 #+begin_src emacs-lisp
-(defvar elpaca-installer-version 0.12)
-(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
-(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
-(defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
-(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                              :ref nil :depth 1 :inherit ignore
-                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                              :build (:not elpaca-activate)))
-(let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
-       (build (expand-file-name "elpaca/" elpaca-builds-directory))
-       (order (cdr elpaca-order))
-       (default-directory repo))
-  (add-to-list 'load-path (if (file-exists-p build) build repo))
-  (unless (file-exists-p repo)
-    (make-directory repo t)
-    (when (<= emacs-major-version 28) (require 'subr-x))
-    (condition-case-unless-debug err
-        (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-                  ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-                                                  ,@(when-let* ((depth (plist-get order :depth)))
-                                                      (list (format "--depth=%d" depth) "--no-single-branch"))
-                                                  ,(plist-get order :repo) ,repo))))
-                  ((zerop (call-process "git" nil buffer t "checkout"
-                                        (or (plist-get order :ref) "--"))))
-                  (emacs (concat invocation-directory invocation-name))
-                  ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
-                                        "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-                  ((require 'elpaca))
-                  ((elpaca-generate-autoloads "elpaca" repo)))
-            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
-          (error "%s" (with-current-buffer buffer (buffer-string))))
-      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
-  (unless (require 'elpaca-autoloads nil t)
-    (require 'elpaca)
-    (elpaca-generate-autoloads "elpaca" repo)
-    (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
-(add-hook 'after-init-hook #'elpaca-process-queues)
-(elpaca `(,@elpaca-order))
+  (defvar elpaca-installer-version 0.12)
+  (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+  (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+  (defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
+  (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                                :ref nil :depth 1 :inherit ignore
+                                :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                                :build (:not elpaca-activate)))
+  (let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
+         (build (expand-file-name "elpaca/" elpaca-builds-directory))
+         (order (cdr elpaca-order))
+         (default-directory repo))
+    (add-to-list 'load-path (if (file-exists-p build) build repo))
+    (unless (file-exists-p repo)
+      (make-directory repo t)
+      (when (<= emacs-major-version 28) (require 'subr-x))
+      (condition-case-unless-debug err
+          (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                    ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                    ,@(when-let* ((depth (plist-get order :depth)))
+                                                        (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                    ,(plist-get order :repo) ,repo))))
+                    ((zerop (call-process "git" nil buffer t "checkout"
+                                          (or (plist-get order :ref) "--"))))
+                    (emacs (concat invocation-directory invocation-name))
+                    ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                          "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                    ((require 'elpaca))
+                    ((elpaca-generate-autoloads "elpaca" repo)))
+              (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+            (error "%s" (with-current-buffer buffer (buffer-string))))
+        ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+    (unless (require 'elpaca-autoloads nil t)
+      (require 'elpaca)
+      (elpaca-generate-autoloads "elpaca" repo)
+      (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+  (add-hook 'after-init-hook #'elpaca-process-queues)
+  (elpaca `(,@elpaca-order))
 
   (elpaca elpaca-use-package
-    ;; Enable use-package :ensure support for Elpaca.
     (elpaca-use-package-mode)
     (setq elpaca-use-package-by-default t))
 
   (elpaca-wait)
 #+end_src
 
-** Compile
-#+begin_src emacs-lisp
- (use-package compile
-    :ensure nil
-    :hook (compilation-filter . ansi-color-compilation-filter)
-    :config
-    (setq compilation-environment '("TERM=xterm-256color")))
-#+end_src
-
-** Install evil-mode
+* EVIL
 #+begin_src emacs-lisp
   (use-package evil
     :ensure t
@@ -191,19 +167,23 @@
     (setq evil-vsplit-window-right t)
     (setq evil-split-window-below t)
     (evil-mode))
+
   (use-package evil-collection
     :ensure t
     :after evil
     :config
     (setq evil-collection-mode-list '(dashboard dired ibuffer magit compile))
     (evil-collection-init))
+
   (use-package evil-tutor
     :ensure t)
+
   (use-package evil-commentary
     :ensure t
     :after evil
     :config
     (evil-commentary-mode))
+
   (use-package evil-surround
     :ensure t
     :after evil
@@ -218,37 +198,10 @@
   (use-package evil-mc
     :ensure t
     :config
-    (global-evil-mc-mode  1))
+    (global-evil-mc-mode 1))
 #+end_src
 
-Change zz behavior by making it align 1/3 of the screen
-#+begin_src emacs-lisp
-  ;; (defun jc/scroll-line-to-one-third ()
-  ;;   (interactive)
-  ;;   (let ((offset (/ (window-body-height) 6)))
-  ;;     (message "Offset: %d" offset)
-  ;;     (save-excursion
-  ;;       (forward-line offset)
-  ;;       (recenter)
-  ;;       (forward-line (- offset)))))
-
-  ;; (use-package emacs
-  ;;   :ensure nil
-  ;;   :after evil
-  ;;   :config
-  ;;   (define-key evil-normal-state-map (kbd "z z") 'jc/scroll-line-to-one-third))
-#+end_src
-
-# ** Vundo
-# #+begin_src emacs-lisp
-#   (use-package vundo
-#     :after evil
-#     :config
-#     (vundo-mode)
-#     (setq evil-undo-system vundo))
-# #+end_src
-
-** General keybindings
+* KEYBINDINGS
 #+begin_src emacs-lisp
   (use-package general
     :ensure t
@@ -257,7 +210,6 @@ Change zz behavior by making it align 1/3 of the screen
     (general-evil-setup)
     (general-auto-unbind-keys)
 
-    ;; Definisci leader key
     (general-create-definer jc/leader-keys
       :states '(normal insert visual emacs)
       :keymaps 'override
@@ -265,7 +217,6 @@ Change zz behavior by making it align 1/3 of the screen
       :global-prefix "M-SPC")
 
     (jc/leader-keys
-      ;; Buffer
       "b" '(:ignore t :wk "Buffer")
       "b b" '(switch-to-buffer :wk "Switch buffer")
       "b i" '(ibuffer :wk "Ibuffer")
@@ -274,28 +225,24 @@ Change zz behavior by making it align 1/3 of the screen
       "b p" '(previous-buffer :wk "Previous buffer")
       "b r" '(revert-buffer :wk "Revert buffer")
 
-      ;; Project
       "p" '(:ignore t :wk "Project")
       "p p" '(project-switch-project :wk "Switch project")
       "p v" '(dired-jump :wk "Dired jump")
       "SPC" '(project-find-file :wk "Project find file")
-      
+
       "g" '(:ignore t :wk "Git")
       "g g" '(magit-status :wk "Status")
 
-      ;; Windows
       "w" '(:ignore t :wk "Window")
       "w v" '(split-window-horizontally :wk "Split horizontally")
       "w h" '(split-window-vertically :wk "Split vertically")
       "w w" '(other-window :wk "Next window")
       "w c" '(delete-window :wk "Close window")
 
-      ;; Help
       "h" '(:ignore t :wk "Help")
       "h f" '(describe-function :wk "Describe function")
       "h v" '(describe-variable :wk "Describe variable")
 
-      ;; Evaluate
       "e" '(:ignore t :wk "Evaluate")
       "e b" '(eval-buffer :wk "Eval buffer")
       "e d" '(eval-defun :wk "Eval defun")
@@ -303,179 +250,93 @@ Change zz behavior by making it align 1/3 of the screen
       "e l" '(eval-last-sexp :wk "Eval last sexp")
       "e r" '(eval-region :wk "Eval region")
 
-      ;; File
       "f" '(:ignore t :wk "File")
       "f s" '(save-buffer :wk "Save file")
-      "f S" '(sudo-edit :wk "Sudo edit file")
-      ))
+      "f S" '(sudo-edit :wk "Sudo edit file")))
 
+  ;; g b: go back (pop mark) — must run after evil loads
   (with-eval-after-load 'evil
     (unless (lookup-key evil-normal-state-map (kbd "g b"))
       (define-key evil-normal-state-map (kbd "g b") #'pop-global-mark)))
-#+end_src
 
-## Misc
-#+begin_src emacs-lisp
-  (ido-mode t)
   (electric-pair-mode -1)
   (electric-indent-mode -1)
 #+end_src
 
-
-* EDITORCONFIG
-#+begin_src emacs-lisp
-(use-package editorconfig
-  :ensure t
-  :config
-  (editorconfig-mode 1))
-#+end_src
-* PROJECT
-#+begin_src emacs-lisp
-#+end_src
-* FONTS
-Defining the various fonts that Emacs will use.
-** Setting the Font Face
+* UI
+** Fonts
 #+begin_src emacs-lisp
   (set-face-attribute 'default nil
-  		    :font "FiraCode Nerd Font"
-  		    :height 110
-  		    :weight 'medium)
+                      :font "FiraCode Nerd Font"
+                      :height 110
+                      :weight 'medium)
   (set-face-attribute 'variable-pitch nil
-  		    :font "Ubuntu"
-  		    :height 120
-  		    :weight 'medium
-  		    )
+                      :font "Ubuntu"
+                      :height 120
+                      :weight 'medium)
   (set-face-attribute 'fixed-pitch nil
-  		    :font "JetBrainsMono Nerd Font"
-  		    :height 110
-  		    :weight 'medium
-  		    )
-
-  ;; Comment text and keywords italics
-  ;; -> works only on emacsclient
-  (set-face-attribute 'font-lock-comment-face nil
-  		    :slant 'italic)
-  (set-face-attribute 'font-lock-keyword-face nil
-  		    :slant 'italic)
-
-  ;; Set default fonts for emacsclient
+                      :font "JetBrainsMono Nerd Font"
+                      :height 110
+                      :weight 'medium)
+  ;; italics work only on emacsclient
+  (set-face-attribute 'font-lock-comment-face nil :slant 'italic)
+  (set-face-attribute 'font-lock-keyword-face nil :slant 'italic)
   (add-to-list 'default-frame-alist '(font . "FiraCode Nerd Font-11"))
 #+end_src
-** Zomming in/out
+
+** Zoom
 #+begin_src emacs-lisp
   (global-set-key (kbd "C-+") 'text-scale-increase)
   (global-set-key (kbd "C-=") 'text-scale-increase)
   (global-set-key (kbd "C--") 'text-scale-decrease)
 #+end_src
 
-* WHICH-KEY
-#+begin_src emacs-lisp
-  (use-package which-key
-    :init
-    (which-key-mode 1)
-    :config
-    (setq which-key-side-window-location 'bottom
-  	which-key-sort-order #'which-key-key-order-alpha
-  	which-key-sort-uppercase-first nil
-  	which-key-add-column-padding 1
-  	which-key-max-display-columns nil
-  	which-key-min-display-lines 6
-  	which-key-side-window-slot -10
-  	which-key-side-window-max-height 0.25
-  	which-key-idle-delay 0.8
-  	which-key-max-description-length 25
-  	which-key-allow-imprecise-window-fit t
-  	which-key-separator " → " )
-    )
-#+end_src
-
-* ORG MODE
-** Enable table of contents
-#+begin_src emacs-lisp
-  (use-package toc-org
-:ensure t
-    :commands toc-org-enable
-    :init (add-hook 'org-mode-hook 'toc-org-enable))
-#+end_src
-
-** Enable org-indent-mode
-#+begin_src emacs-lisp
-  (add-hook 'org-mode-hook 'org-indent-mode)
-  (add-hook 'org-mode-hook (lambda () (setq tab-width 8)))
-#+end_src
-
-** Enable org bullets
-#+begin_src emacs-lisp
-  (use-package org-bullets
-:ensure t)
-  (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
-#+end_src
-
-** Enable org-tempo
-Useful snippets for org-mode
-| Typing the below + TAB | Expands to ...                          |
-|------------------------+-----------------------------------------|
-| <a                     | '#+BEGIN_EXPORT ascii' … '#+END_EXPORT  |
-| <c                     | '#+BEGIN_CENTER' … '#+END_CENTER'       |
-| <C                     | '#+BEGIN_COMMENT' … '#+END_COMMENT'     |
-| <e                     | '#+BEGIN_EXAMPLE' … '#+END_EXAMPLE'     |
-| <E                     | '#+BEGIN_EXPORT' … '#+END_EXPORT'       |
-| <h                     | '#+BEGIN_EXPORT html' … '#+END_EXPORT'  |
-| <l                     | '#+BEGIN_EXPORT latex' … '#+END_EXPORT' |
-| <q                     | '#+BEGIN_QUOTE' … '#+END_QUOTE'         |
-| <s                     | '#+BEGIN_SRC' … '#+END_SRC'             |
-| <v                     | '#+BEGIN_VERSE' … '#+END_VERSE'         |
-#+begin_src emacs-lisp
-  (require 'org-tempo)
-#+end_src
-** Org roam
-#+begin_src emacs-lisp
-  (use-package org-roam
-  :ensure t
-  :init
-  (setq org-roam-v2-ack t)
-  :custom
-  (org-roam-directory "~/org-roam")
-  (org-roam-completion-everywhere t)
-  :bind (("C-c n l" . org-roam-buffer-toggle)
-         ("C-c n f" . org-roam-node-find)
-         ("C-c n i" . org-roam-node-insert)
-         :map org-mode-map
-         ("C-M-i"    . completion-at-point))
-  :config
-  (org-roam-setup))
-#+end_src
-
-* THEME
+** Theme
 #+begin_src emacs-lisp
   (add-to-list 'custom-theme-load-path "~/.config/emacs/themes/")
-  ;; (load-theme 'cobrakai t)
 
   (use-package kanagawa-themes
     :ensure t
     :config
     (load-theme 'kanagawa-wave t))
-#+end_src
-** Solaire mode
-#+begin_src emacs-lisp
+
   (use-package solaire-mode
     :ensure t
     :demand t
     :config
     (solaire-global-mode +1))
 #+end_src
-* TODO HIGHLIGHT
+
+** Mode Line
 #+begin_src emacs-lisp
-  (use-package hl-todo
+  (use-package minions
     :ensure t
     :demand t
-    :init
-    (global-hl-todo-mode))
+    :config
+    (minions-mode 1))
 #+end_src
 
-* ALL THE ICONS
-This is an icon set that can be used with dashboard, dired, ibuffer and other Emacs programs.
-  
+** Which Key
+#+begin_src emacs-lisp
+  (use-package which-key
+    :init
+    (which-key-mode 1)
+    :config
+    (setq which-key-side-window-location 'bottom
+          which-key-sort-order #'which-key-key-order-alpha
+          which-key-sort-uppercase-first nil
+          which-key-add-column-padding 1
+          which-key-max-display-columns nil
+          which-key-min-display-lines 6
+          which-key-side-window-slot -10
+          which-key-side-window-max-height 0.25
+          which-key-idle-delay 0.8
+          which-key-max-description-length 25
+          which-key-allow-imprecise-window-fit t
+          which-key-separator " → "))
+#+end_src
+
+** Icons
 #+begin_src emacs-lisp
   (use-package all-the-icons
     :ensure t
@@ -493,28 +354,75 @@ This is an icon set that can be used with dashboard, dired, ibuffer and other Em
     :init (all-the-icons-completion-mode))
 #+end_src
 
-* RAINBOW MODE
-Display the actual color as a background for any hex color value (ex. #ffffff).  The code block below enables rainbow-mode in all programming modes (prog-mode) as well as org-mode, which is why rainbow works in this document.  
-
+** Highlight
 #+begin_src emacs-lisp
-  ;; (use-package rainbow-mode
-  ;;   :hook 
-  ;;   ((org-mode prog-mode) . rainbow-mode))
+  (use-package hl-todo
+    :ensure t
+    :demand t
+    :init
+    (global-hl-todo-mode))
 #+end_src
 
-* PDF-TOOLS
-Render pdf files inside emacs
-
+** Zen Mode
 #+begin_src emacs-lisp
-(use-package pdf-tools
-  :ensure t
-  :mode ("\\.pdf\\'" . pdf-view-mode)
-  :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1))) ;; This is the fix
-  :config
-  (pdf-tools-install))
+  (use-package zen-mode
+    :ensure t
+    :demand t)
 #+end_src
 
-* MAGIT
+* ORG MODE
+** Enable Table of Contents
+#+begin_src emacs-lisp
+  (use-package toc-org
+    :ensure t
+    :commands toc-org-enable
+    :init (add-hook 'org-mode-hook 'toc-org-enable))
+#+end_src
+
+** Org Indent and Bullets
+#+begin_src emacs-lisp
+  (add-hook 'org-mode-hook 'org-indent-mode)
+  (add-hook 'org-mode-hook (lambda () (setq tab-width 8)))
+
+  (use-package org-bullets
+    :ensure t)
+  (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+#+end_src
+
+** Org Tempo
+Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
+#+begin_src emacs-lisp
+  (require 'org-tempo)
+#+end_src
+
+** Org Roam
+#+begin_src emacs-lisp
+  (use-package org-roam
+    :ensure t
+    :init
+    (setq org-roam-v2-ack t)
+    :custom
+    (org-roam-directory "~/org-roam")
+    (org-roam-completion-everywhere t)
+    :bind (("C-c n l" . org-roam-buffer-toggle)
+           ("C-c n f" . org-roam-node-find)
+           ("C-c n i" . org-roam-node-insert)
+           :map org-mode-map
+           ("C-M-i" . completion-at-point))
+    :config
+    (org-roam-setup))
+#+end_src
+
+* TOOLS
+** Editorconfig
+#+begin_src emacs-lisp
+  (use-package editorconfig
+    :ensure t
+    :config
+    (editorconfig-mode 1))
+#+end_src
+
+** Magit
 #+begin_src emacs-lisp
   (use-package transient
     :ensure t)
@@ -523,29 +431,75 @@ Render pdf files inside emacs
     :ensure t)
 #+end_src
 
-* PROTOBUF
+** PDF Tools
 #+begin_src emacs-lisp
-  (use-package c-ts-mode
-    :ensure nil
-    :init
-    (add-to-list 'auto-mode-alist '("\\.proto\\'" . c-ts-mode))
-    )
-#+end_src
-
-* MODE LINE
-#+begin_src emacs-lisp
-  (use-package minions
+  (use-package pdf-tools
     :ensure t
-    :demand t
+    :mode ("\\.pdf\\'" . pdf-view-mode)
+    :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1)))
     :config
-    (minions-mode 1))
+    (pdf-tools-install))
 #+end_src
 
-* ZEN MODE
+* COMPLETION
+** Vertico & Marginalia
 #+begin_src emacs-lisp
-    (use-package zen-mode
-      :ensure t
-      :demand t)
+  (use-package vertico
+    :ensure t
+    :bind (:map vertico-map
+                ("C-j" . vertico-next)
+                ("C-k" . vertico-previous)
+                ("C-f" . vertico-exit)
+                :map minibuffer-local-map
+                ("M-h" . backward-kill-word))
+    :custom
+    (vertico-cycle t)
+    (vertico-count 20)
+    (vertico-resize nil) ;; prevents pixel recalculation freeze
+    :init
+    (vertico-mode))
+
+  (use-package marginalia
+    :after vertico
+    :ensure t
+    :custom
+    (marginalia-annotators '(marginalia-annotators-light nil))
+    :init
+    (marginalia-mode))
+#+end_src
+
+** Corfu & Orderless
+#+begin_src emacs-lisp
+  (use-package corfu
+    :ensure t
+    :init
+    (global-corfu-mode)
+    :config
+    (setq corfu-auto t
+          corfu-auto-delay 0
+          corfu-auto-prefix 2
+          corfu-quit-no-match 'separator
+          corfu-cycle t
+          corfu-preselect 'prompt))
+
+  (use-package orderless
+    :ensure t
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-defaults nil)
+    (completion-category-overrides '((file (styles partial-completion)))))
+
+  (setq tab-always-indent 'complete)
+  (setq text-mode-ispell-word-completion nil)
+  (setq read-extended-command-predicate #'command-completion-default-include-p)
+#+end_src
+
+** Yasnippet
+#+begin_src emacs-lisp
+  (use-package yasnippet
+    :ensure t
+    :config
+    (yas-global-mode 1))
 #+end_src
 
 * LANGUAGES
@@ -567,96 +521,48 @@ Render pdf files inside emacs
                (cmake "https://github.com/uyha/tree-sitter-cmake")
                (c "https://github.com/tree-sitter/tree-sitter-c")
                (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
-               (rust"https://github.com/tree-sitter/tree-sitter-rust")
+               (rust "https://github.com/tree-sitter/tree-sitter-rust")
                (toml "https://github.com/tree-sitter/tree-sitter-toml")
                (tsx . ("https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "tsx/src"))
                (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" "v0.20.3" "typescript/src"))
                (yaml . ("https://github.com/ikatyang/tree-sitter-yaml" "v0.5.0"))
                (go . ("https://github.com/tree-sitter/tree-sitter-go"))
-               (gomod .("https://github.com/camdencheek/tree-sitter-go-mod"))
+               (gomod . ("https://github.com/camdencheek/tree-sitter-go-mod"))
                (prisma "https://github.com/victorhqc/tree-sitter-prisma")))
       (add-to-list 'treesit-language-source-alist grammar)
-      ;; Only install `grammar' if we don't already have it
-      ;; installed. However, if you want to *update* a grammar then
-      ;; this obviously prevents that from happening.
       (unless (treesit-language-available-p (car grammar))
         (treesit-install-language-grammar (car grammar)))))
+
   (os/setup-install-grammars)
   (setq treesit-font-lock-level 4)
 #+end_src
-** lsp-mode
+
+** LSP Mode
 #+begin_src emacs-lisp
-  ;; yasnippet
-  (use-package yasnippet
-    :ensure t
+  (use-package compile
+    :ensure nil
+    :hook (compilation-filter . ansi-color-compilation-filter)
     :config
-    (yas-global-mode 1))
+    (setq compilation-environment '("TERM=xterm-256color")))
 
   (use-package lsp-mode
     :ensure t
     :commands (lsp lsp-deferred)
     :init
-    (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+    (setq lsp-keymap-prefix "C-c l")
     (setq lsp-completion-provider :none)
     (setq lsp-idle-delay 0.500)
     :config
     (setq read-process-output-max (* 3 1024 1024))
     (setq lsp-use-plists nil)
-    (setq lsp-enable-file-watchers t)   ;; metti a nil se il progetto ha migliaia di file
+    (setq lsp-enable-file-watchers t)
     (setq lsp-file-watch-threshold 5000)
-
     (setq lsp-rust-analyzer-cargo-watch-command "clippy"
-        	lsp-rust-analyzer-cargo-load-out-dirs-from-check t
-        	lsp-rust-analyzer-use-lld t)
+          lsp-rust-analyzer-cargo-load-out-dirs-from-check t
+          lsp-rust-analyzer-use-lld t)
     (lsp-enable-which-key-integration t))
-
-  ;; (defun jc/lsp-mode-setup ()
-  ;;   (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
-  ;;   (lsp-headerline-breadcrumb-mode))
-
-  ;;   :hook (lsp-mode . jc/lsp-mode-setup)
-  (use-package corfu
-    :ensure t
-    :init
-    (global-corfu-mode)
-    :config
-    ;; Enable auto completion and configure quitting
-    (setq corfu-auto t
-        	corfu-auto-delay 0
-        	corfu-auto-prefix 2
-        	corfu-quit-no-match 'separator
-          corfu-cycle t
-          cortfu-preselect 'prompt) ;; or t
-    )
-  ;; Optionally use the `orderless' completion style.
-  (use-package orderless
-    :ensure t
-    :custom
-    ;; (orderless-style-dispatchers '(orderless-affix-dispatch))
-    ;; (orderless-component-separator #'orderless-escapable-split-on-space)
-    (completion-styles '(orderless basic))
-    (completion-category-defaults nil)
-    (completion-category-overrides '((file (styles partial-completion)))))
-  (use-package emacs
-    :ensure nil
-    :custom
-    ;; TAB cycle if there are only few candidates
-    ;; (completion-cycle-threshold 3)
-
-    ;; Enable indentation+completion using the TAB key.
-    ;; `completion-at-point' is often bound to M-TAB.
-    (tab-always-indent 'complete)
-
-    ;; Emacs 30 and newer: Disable Ispell completion function.
-    ;; Try `cape-dict' as an alternative.
-    (text-mode-ispell-word-completion nil)
-
-    ;; Hide commands in M-x which do not apply to the current mode.  Corfu
-    ;; commands are hidden, since they are not used via M-x. This setting is
-    ;; useful beyond Corfu.
-    (read-extended-command-predicate #'command-completion-default-include-p)
-    )
 #+end_src
+
 ** Typescript
 #+begin_src emacs-lisp
   (use-package typescript-ts-mode
@@ -665,24 +571,30 @@ Render pdf files inside emacs
     :hook (typescript-ts-mode . lsp-deferred)
     :config
     (setq typescript-ts-mode-indent-offset 2))
-
-  ;; (use-package tsx-ts-mode
-  ;;   :ensure nil
-  ;;   :mode "\\.tsx\\'"
-  ;;   :hook (tsx-ts-mode . lsp-deferred))
 #+end_src
+
 ** Javascript
 #+begin_src emacs-lisp
-  ;; (use-package emacs
-  ;; :ensure nil
-  ;; :after lsp-mode
-  ;; :config
-  ;; (lsp-install-server eslint)) 
   (use-package js-ts-mode
     :ensure nil
     :mode "\\.js\\'"
     :hook (js-ts-mode . lsp-deferred))
 #+end_src
+
+** Golang
+#+begin_src emacs-lisp
+  (use-package go-mode
+    :ensure t
+    :mode "\\.go\\'"
+    :hook
+    (go-mode . lsp-deferred)
+    (go-mode . (lambda ()
+                 (setq-local indent-tabs-mode t)
+                 (setq-local tab-width 4)
+                 (add-hook 'before-save-hook #'lsp-format-buffer t t)
+                 (add-hook 'before-save-hook #'lsp-organize-imports t t))))
+#+end_src
+
 ** Rust
 #+begin_src emacs-lisp
   (use-package rust-mode
@@ -690,136 +602,62 @@ Render pdf files inside emacs
     :config
     (setq rust-mode-treesitter-derive t)
     :hook (rust-mode . lsp-deferred))
-
-  ;; (use-package rust-ts-mode
-  ;;   :ensure nil
-  ;;   :mode "\\.rs\\'"
-  ;;   :hook (rust-ts-mode . lsp-deferred))
-
 #+end_src
-** C++ 
+
+** C++
 #+begin_src emacs-lisp
   (use-package c++-ts-mode
     :ensure nil
-    :hook
-    (c++-ts-mode . lsp-deferred)
+    :hook (c++-ts-mode . lsp-deferred)
     :init
     (add-to-list 'auto-mode-alist '("\\.cpp\\'" . c++-ts-mode))
-    (add-to-list 'auto-mode-alist '("\\.hpp\\'" . c++-ts-mode))
-    )
+    (add-to-list 'auto-mode-alist '("\\.hpp\\'" . c++-ts-mode)))
 
   (use-package clang-format
     :ensure t
     :init
     (setq clang-format-style "file"))
 #+end_src
-** Golang
-#+begin_src emacs-lisp
-    ;; (use-package go-ts-mode
-    ;;   :ensure nil
-    ;;   :init
-    ;;   (add-to-list 'auto-mode-alist '("\\.go\\'" . go-ts-mode))
-    ;;   (add-to-list 'auto-mode-alist '("/go\\.mod\\'" . go-mod-ts-mode))
-    ;;   :hook
-    ;;   (go-ts-mode . lsp-deferred)
-    ;;   (go-ts-mode . (lambda ()
-    ;;                   ;; 1. Standard Go: Usa TAB reali (non spazi)
-    ;;                   (setq-local indent-tabs-mode t)
-                      
-    ;;                   ;; 2. Visualizzazione: Mostra un tab largo quanto 4 spazi
-    ;;                   ;; (Lo standard puro è 8, ma 4 è più comodo su schermi moderni.
-    ;;                   ;;  Il file verrà comunque salvato con \t, quindi non rompe gofmt)
-    ;;                   (setq-local tab-width 4)
-                      
-    ;;                   ;; 3. Formattazione al salvataggio (Format + Organize Imports)
-    ;;                   ;; Usiamo le funzioni di LSP che chiamano internamente gopls/gofmt
-    ;;                   (add-hook 'before-save-hook #'lsp-format-buffer t t)
-    ;;                   (add-hook 'before-save-hook #'lsp-organize-imports t t))))
-  (use-package go-mode
-    :ensure t
-    :mode "\\.go\\'"
-    :hook
-    (go-mode . lsp-deferred)
-    (go-mode . (lambda ()
-                 ;; 1. Standard Go: Usa TAB reali (non spazi)
-                 (setq-local indent-tabs-mode t)
-                 
-                 ;; 2. Visualizzazione: Mostra un tab largo quanto 4 spazi
-                 (setq-local tab-width 4)
-                 
-                 ;; 3. Formattazione al salvataggio (Format + Organize Imports)
-                 (add-hook 'before-save-hook #'lsp-format-buffer t t)
-                 (add-hook 'before-save-hook #'lsp-organize-imports t t))))
-#+end_src
+
 ** Bash
 #+begin_src emacs-lisp
   (use-package bash-ts-mode
     :ensure nil
     :mode "\\.bash\\'"
-    :hook (bash-ts-mode . lsp-deferred)
-    )
+    :hook (bash-ts-mode . lsp-deferred))
 #+end_src
+
 ** YAML
 #+begin_src emacs-lisp
   (use-package yaml-ts-mode
     :ensure nil
-    :mode "\\.yaml\\'"
-    )
+    :mode "\\.yaml\\'")
 #+end_src
 
 ** Dockerfile
 #+begin_src emacs-lisp
   (use-package dockerfile-mode
     :ensure t
-    :mode "\\Dockerfile\\'"
-  )
+    :mode "\\Dockerfile\\'")
 #+end_src
 
-** Dockerfile
+** GraphQL
 #+begin_src emacs-lisp
   (use-package graphql-mode
     :ensure t
-    :mode "\\.graphql\\'"
-  )
+    :mode "\\.graphql\\'")
 #+end_src
 
-* COMPLETION
-** Vertico
+** Protobuf
 #+begin_src emacs-lisp
-(use-package vertico
-  :ensure t
-  :bind (:map vertico-map
-              ("C-j" . vertico-next)
-              ("C-k" . vertico-previous)
-              ("C-f" . vertico-exit)
-              :map minibuffer-local-map
-              ("M-h" . backward-kill-word))
-  :custom
-  ;; CORREZIONE: Dentro :custom non si usa (setq variabile valore),
-  ;; ma (variabile valore).
-  (vertico-cycle t)
-  (vertico-count 20)
-  
-  ;; LA SOLUZIONE AL FREEZE:
-  ;; Imposta a nil invece di 'grow-only.
-  ;; Questo impedisce a Emacs di calcolare i pixel ogni volta.
-  (vertico-resize nil) 
-
-  :init
-  (vertico-mode))
-
-;; Marginalia rimane invariato
-(use-package marginalia
-  :after vertico
-  :ensure t
-  :custom
-  (marginalia-annotators '(marginalia-annotators-light nil))
-  :init
-  (marginalia-mode))
+  (use-package c-ts-mode
+    :ensure nil
+    :init
+    (add-to-list 'auto-mode-alist '("\\.proto\\'" . c-ts-mode)))
 #+end_src
+
 * GARBAGE COLLECTOR
 #+begin_src emacs-lisp
   (add-hook 'focus-out-hook (lambda () (garbage-collect)))
   (setq gc-cons-threshold (* 256 1024 1024))
 #+end_src
-
