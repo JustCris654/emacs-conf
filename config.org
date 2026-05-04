@@ -307,7 +307,11 @@ Change zz behavior by making it align 1/3 of the screen
       "f" '(:ignore t :wk "File")
       "f s" '(save-buffer :wk "Save file")
       "f S" '(sudo-edit :wk "Sudo edit file")
-    ))
+      ))
+
+  (with-eval-after-load 'evil
+    (unless (lookup-key evil-normal-state-map (kbd "g b"))
+      (define-key evil-normal-state-map (kbd "g b") #'pop-global-mark)))
 #+end_src
 
 ## Misc
@@ -651,9 +655,6 @@ Render pdf files inside emacs
     ;; commands are hidden, since they are not used via M-x. This setting is
     ;; useful beyond Corfu.
     (read-extended-command-predicate #'command-completion-default-include-p)
-    :config
-    (unless (lookup-key evil-normal-state-map (kbd "g b"))
-      (define-key evil-normal-state-map (kbd "g b") #'pop-global-mark))
     )
 #+end_src
 ** Typescript
