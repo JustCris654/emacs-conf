@@ -30,7 +30,10 @@
 - [[#tools][TOOLS]]
   - [[#editorconfig][Editorconfig]]
   - [[#magit][Magit]]
+  - [[#diff-hl][Diff-HL]]
   - [[#pdf-tools][PDF Tools]]
+  - [[#claude-code][Claude Code]]
+  - [[#vterm][VTERM]]
 - [[#completion][COMPLETION]]
   - [[#vertico--marginalia][Vertico & Marginalia]]
   - [[#corfu--orderless][Corfu & Orderless]]
@@ -48,6 +51,8 @@
   - [[#dockerfile][Dockerfile]]
   - [[#graphql][GraphQL]]
   - [[#protobuf][Protobuf]]
+  - [[#slint][Slint]]
+  - [[#java][Java]]
 - [[#garbage-collector][GARBAGE COLLECTOR]]
 
 * EMACS CORE
@@ -103,7 +108,9 @@
     (setq gc-cons-threshold most-positive-fixnum))
 
   (defun my-minibuffer-exit-hook ()
-    (setq gc-cons-threshold 800000))
+    ;; restore working baseline, NOT 800KB — 800KB caused GC thrash
+    ;; everywhere after first minibuffer use.
+    (setq gc-cons-threshold (* 256 1024 1024)))
 
   (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
   (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
@@ -155,6 +162,9 @@
     (setq elpaca-use-package-by-default t))
 
   (elpaca-wait)
+
+  (use-package compat :ensure t :demand t)
+  (elpaca-wait)
 #+end_src
 
 * EVIL
@@ -164,6 +174,7 @@
     :init
     (setq evil-want-integration t)
     (setq evil-want-keybinding nil)
+    ;; (setq evil-want-C-i-jump nil)
     (setq evil-vsplit-window-right t)
     (setq evil-split-window-below t)
     (evil-mode))
@@ -172,7 +183,7 @@
     :ensure t
     :after evil
     :config
-    (setq evil-collection-mode-list '(dashboard dired ibuffer magit compile))
+    (setq evil-collection-mode-list '(dashboard dired ibuffer magit compile arc-mode))
     (evil-collection-init))
 
   (use-package evil-tutor
@@ -252,12 +263,19 @@
 
       "f" '(:ignore t :wk "File")
       "f s" '(save-buffer :wk "Save file")
-      "f S" '(sudo-edit :wk "Sudo edit file")))
+      "f S" '(sudo-edit :wk "Sudo edit file")
+
+      "c" '(:ignore t :wk "Compile")
+      "c c" '(compile :wk "Compile")
+      "c r" '(recompile :wk "Recompile")
+      "c k" '(kill-compilation :wk "Kill compilation")))
 
   ;; g b: go back (pop mark) — must run after evil loads
   (with-eval-after-load 'evil
     (unless (lookup-key evil-normal-state-map (kbd "g b"))
-      (define-key evil-normal-state-map (kbd "g b") #'pop-global-mark)))
+      (define-key evil-normal-state-map (kbd "g b") #'pop-global-mark))
+    (define-key evil-normal-state-map (kbd "zz")
+      (lambda () (interactive) (recenter (/ (window-height) 3)))))
 
   (electric-pair-mode -1)
   (electric-indent-mode -1)
@@ -431,6 +449,17 @@ Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
     :ensure t)
 #+end_src
 
+** Diff-HL
+#+begin_src emacs-lisp
+  (use-package diff-hl
+    :ensure t
+    :hook ((find-file    . diff-hl-mode)
+           (dired-mode   . diff-hl-dired-mode)
+           (magit-post-refresh . diff-hl-magit-post-refresh))
+    :config
+    (diff-hl-flydiff-mode))
+#+end_src
+
 ** PDF Tools
 #+begin_src emacs-lisp
   (use-package pdf-tools
@@ -439,6 +468,21 @@ Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
     :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1)))
     :config
     (pdf-tools-install))
+#+end_src
+
+** Claude Code
+#+begin_src emacs-lisp
+(use-package claude-code-ide
+  :ensure (:host github :repo "manzaltu/claude-code-ide.el")
+  :bind ("C-c C-'" . claude-code-ide-menu)
+  :config
+  (claude-code-ide-emacs-tools-setup))
+#+end_src
+
+** VTERM
+#+begin_src emacs-lisp
+(use-package vterm
+    :ensure t)
 #+end_src
 
 * COMPLETION
@@ -472,15 +516,18 @@ Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
 #+begin_src emacs-lisp
   (use-package corfu
     :ensure t
+    :bind (:map corfu-map
+                ("TAB" . corfu-insert)
+                ([tab] . corfu-insert))
     :init
     (global-corfu-mode)
     :config
     (setq corfu-auto t
-          corfu-auto-delay 0
-          corfu-auto-prefix 2
+          corfu-auto-delay 0.3    ;; higher debounce: rust-analyzer refetches every keystroke (isIncomplete)
+          corfu-auto-prefix 3
           corfu-quit-no-match 'separator
           corfu-cycle t
-          corfu-preselect 'prompt))
+          corfu-preselect 'first))
 
   (use-package orderless
     :ensure t
@@ -491,7 +538,15 @@ Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
 
   (setq tab-always-indent 'complete)
   (setq text-mode-ispell-word-completion nil)
-  (setq read-extended-command-predicate #'command-completion-default-include-p)
+  ;; command-completion-default-include-p runs a mode-relevance check on EVERY
+  ;; obarray symbol per keystroke = multi-second M-x freeze (confirmed by profiler).
+  ;; nil = show all commands, no per-candidate predicate = fast.
+  (setq read-extended-command-predicate nil)
+
+  (use-package cape
+    :ensure t
+    :init
+    (add-to-list 'completion-at-point-functions #'cape-dabbrev))
 #+end_src
 
 ** Yasnippet
@@ -543,7 +598,12 @@ Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
     :ensure nil
     :hook (compilation-filter . ansi-color-compilation-filter)
     :config
-    (setq compilation-environment '("TERM=xterm-256color")))
+    (require 'ansi-color)
+    ;; Force color output, but DON'T pretend to be a tty: a fake TERM makes
+    ;; cargo draw a progress bar with cursor/erase-line escapes ([K, cursor
+    ;; moves) that ansi-color can't render, leaving garbage in the buffer.
+    (setq compilation-environment '("CARGO_TERM_COLOR=always"))
+    (setq compilation-scroll-output t))
 
   (use-package lsp-mode
     :ensure t
@@ -554,13 +614,39 @@ Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
     (setq lsp-idle-delay 0.500)
     :config
     (setq read-process-output-max (* 3 1024 1024))
-    (setq lsp-use-plists nil)
+    (setq lsp-use-plists t)            ;; pairs with LSP_USE_PLISTS in early-init.el
+    (setq lsp-log-io nil)              ;; never log JSON traffic (huge perf hit if on)
     (setq lsp-enable-file-watchers t)
     (setq lsp-file-watch-threshold 5000)
-    (setq lsp-rust-analyzer-cargo-watch-command "clippy"
-          lsp-rust-analyzer-cargo-load-out-dirs-from-check t
+    ;; trim heavy UI work that fires on cursor move / completion
+    (setq lsp-enable-symbol-highlighting nil)
+    (setq lsp-headerline-breadcrumb-enable nil)
+    (setq lsp-eldoc-render-all nil)
+    (setq lsp-signature-render-documentation nil)
+    (setq lsp-completion-show-detail t)
+    (setq lsp-completion-show-kind t)
+    ;; clippy pins CPU on every change → server can't answer completion → freeze.
+    ;; "check" is far lighter. Switch back to clippy only if you want the lints.
+    (setq lsp-rust-analyzer-cargo-watch-command "check"
+          lsp-rust-analyzer-cargo-run-build-scripts t
+          lsp-rust-analyzer-proc-macro-enable t
           lsp-rust-analyzer-use-lld t)
-    (lsp-enable-which-key-integration t))
+    (lsp-enable-which-key-integration t)
+    (add-hook 'lsp-completion-mode-hook
+              (lambda ()
+                (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+                      '(orderless)))))
+
+  (use-package lsp-ui
+    :ensure t
+    :hook (lsp-mode . lsp-ui-mode)
+    :bind (:map lsp-mode-map
+                ("C-c l d" . lsp-ui-doc-glance))  ;; show doc on demand
+    :config
+    (setq lsp-ui-doc-enable nil             ;; no auto popup on hover
+          lsp-ui-doc-show-with-cursor nil   ;; never trigger on cursor rest
+          lsp-ui-doc-position 'at-point
+          lsp-ui-sideline-enable nil))      ;; sideline is the heavy part; off
 #+end_src
 
 ** Typescript
@@ -578,7 +664,11 @@ Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
   (use-package js-ts-mode
     :ensure nil
     :mode "\\.js\\'"
-    :hook (js-ts-mode . lsp-deferred))
+    :hook (js-ts-mode . (lambda ()
+                          ;; only block deno; ts-ls is the JS LSP server.
+                          ;; disabling both = no client = no completion.
+                          (setq-local lsp-disabled-clients '(deno-ls))
+                          (lsp-deferred))))
 #+end_src
 
 ** Golang
@@ -597,11 +687,10 @@ Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
 
 ** Rust
 #+begin_src emacs-lisp
-  (use-package rust-mode
-    :ensure t
-    :config
-    (setq rust-mode-treesitter-derive t)
-    :hook (rust-mode . lsp-deferred))
+  (use-package rust-ts-mode
+    :ensure nil
+    :mode ("\\.rs\\'" . rust-ts-mode)
+    :hook (rust-ts-mode . lsp-deferred))
 #+end_src
 
 ** C++
@@ -650,10 +739,25 @@ Useful snippets: ~<s TAB~ → src block, ~<q TAB~ → quote, etc.
 
 ** Protobuf
 #+begin_src emacs-lisp
-  (use-package c-ts-mode
-    :ensure nil
+  (use-package protobuf-mode
+    :ensure t
     :init
     (add-to-list 'auto-mode-alist '("\\.proto\\'" . c-ts-mode)))
+#+end_src
+
+** Slint
+#+begin_src emacs-lisp
+  (use-package slint-mode
+    :ensure (:host github :repo "nilclass/slint-mode")
+    :mode "\\.slint\\'")
+#+end_src
+
+** Java
+#+begin_src emacs-lisp
+  (use-package lsp-java
+    :ensure t
+    :mode ("\\.java\\'" . java-mode)
+    :hook (java-mode . lsp-deferred))
 #+end_src
 
 * GARBAGE COLLECTOR
